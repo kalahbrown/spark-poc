@@ -24,6 +24,9 @@ libraryDependencies +=
 	"org.scalatest" % "scalatest_2.10" % "2.2.6" % "test"
 	
 libraryDependencies += 
+	"com.github.scala-incubator.io" %% "scala-io-file" % "0.4.2" % "test"
+	
+libraryDependencies += 
 	"com.holdenkarau" %% "spark-testing-base" % "1.6.1_0.3.2" % "test" excludeAll(
 			ExclusionRule(organization = "javax.servlet.jsp")
 	)
