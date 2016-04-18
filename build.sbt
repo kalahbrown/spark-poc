@@ -50,6 +50,10 @@ libraryDependencies +=
 			ExclusionRule(organization = "org.eclipse.jetty.orbit"),
 			ExclusionRule(organization = "org.mortbay.jetty")
 	)
+libraryDependencies += 
+	"com.fasterxml.jackson.module" % "jackson-module-scala_2.10" % "2.7.2"
+
+
 	
 
 libraryDependencies +=
@@ -57,7 +61,8 @@ libraryDependencies +=
 			ExclusionRule(organization = "javax.servlet"),
 			ExclusionRule(organization = "javax.servlet.jsp"),
 			ExclusionRule(organization = "org.eclipse.jetty.orbit"),
-			ExclusionRule(organization = "org.mortbay.jetty")
+			ExclusionRule(organization = "org.mortbay.jetty"),
+			ExclusionRule(organization = "com.fasterxml.jackson.core")
 )
 	
 

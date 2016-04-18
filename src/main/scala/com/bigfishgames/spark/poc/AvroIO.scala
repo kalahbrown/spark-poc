@@ -32,6 +32,8 @@ import org.apache.spark.SparkContext._
 //  the next area to explore is write Object, can this be done to just serialize an RDD.
 //TODO: Add the ability to read schema from HDFS
 
+
+//TODO : MUST NOT use Java's Date or Calendar, instead use Joda-Time or JSR-310 https://github.com/alexandru/scala-best-practices/blob/master/sections/2-language-rules.md
 object AvroIO {
 
   val logger = Logger.getLogger(this.getClass.getName)
