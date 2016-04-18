@@ -18,7 +18,7 @@ import scalax.file.Path
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.DeserializationFeature
-import com.bigfishgames.spark.poc.AvroIO
+import com.bigfishgames.spark.poc._
 
 object transformer {
 
@@ -33,7 +33,7 @@ object transformer {
       //If we want a Big Integer, change the avro schema to use java.math.BigInteger and cast to that instead of Long
       throw new Exception("BigInteger is not supported. Long is supported")
     } else {
-      st = new java.lang.Long(value.asInstanceOf[Int].intValue()) 
+      st = new java.lang.Long(value.asInstanceOf[Int].intValue())
       print("Int")
     }
     st
@@ -74,9 +74,7 @@ object transformer {
     //using getOrElse because Avro cannot handle Some from the Option trait
     val text = jsonMap.get("text").getOrElse("")
     val sessionId = jsonMap.get("session_id").getOrElse("")
-
     val characterId = jsonMap.get("character_ids").getOrElse(0)
-
     val buyInId = jsonMap.get("buy_in_id").getOrElse("")
     val tableId = jsonMap.get("table_id").getOrElse("")
 
@@ -132,7 +130,7 @@ class ArvoIOTest extends FunSuite with Serializable with BeforeAndAfter {
     path.deleteRecursively(continueOnFailure = true)
 
     val conf = new SparkConf()
-      .setMaster("local[1]")
+      .setMaster("local[3]")
       .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
       .set("spark.kryoserializer.buffer", "24")
       .set("HADOOP_HOME", System.getenv().get("HADOOP_HOME"))
@@ -233,7 +231,6 @@ class ArvoIOTest extends FunSuite with Serializable with BeforeAndAfter {
     assert(actual._1.datum().get("test3").toString() == "21")
   }
 
-  //math.BigInteger???? test for that
   test("transform avro include json") {
     val recordBuilder = new GenericRecordBuilder(AvroIO.parseAvroSchema(schemaStr))
     recordBuilder.set("test1", "{\"character_ids\": 92 , \"text\": \"test\", \"session_id\": \"177372818\", \"buy_in_id\": \"152\", \"table_id\": \"27773\"}")
@@ -279,4 +276,83 @@ class ArvoIOTest extends FunSuite with Serializable with BeforeAndAfter {
     assert(actual._1.datum().get("tableId").toString() == "27773")
 
   }
+
+  test("transformLobbyEvent") {
+    //{env : "prod", game : "test.int10", evtt : "lobby", tss : 1460057037, tsc : 1459972535, tzo : 0, bfg : null , 
+    //rid : "raveID::2e5084813b06452198a2700b8d1e5c9f", chid : 49358176, plt : "iOS", ver : "9.2.2", bld : null , 
+    //snid : "2229571687", psnid : null, snn : 0,  
+    //data: {"value":"slots","ts_client_device":"1459521025","event_name":"return_to_lobby"}, "ip": "207.228.78.175"}
+    val inputSchemaStr = """{                              
+              "type": "record",                                            
+              "name": "RPT_GT_EVENT_STREAM",                                         
+              "fields": [      
+              	      {"name": "evtt", "type": ["null","string"]},                
+                      {"name": "tss", "type": ["null","long"]},  
+                      {"name": "tsc", "type": ["null","long"]},  
+                      {"name": "tzo", "type": ["null","int"]},   
+                      {"name": "bfg", "type": ["null","string"]},           
+                      {"name": "rid", "type": ["null","string"]},  
+                      {"name": "chid", "type": ["null","long"]},   
+                      {"name": "plt", "type": ["null","string"]},     
+                      {"name": "ver", "type": ["null","string"]},   
+                      {"name": "ip", "type": ["null","string"]},     
+                      {"name": "bld", "type": ["null","string"]},     
+                      {"name": "snid", "type": ["null","string"]},     
+                      {"name": "psnid", "type": ["null","string"]},     
+                      {"name": "snn", "type": ["null","int"]},                    
+                      {"name": "data", "type": ["null","string"]},
+                      {"name": "env", "type": ["null","string"]},
+                      {"name": "game", "type": ["null", "string"]}
+                      ] }"""
+
+    val recordBuilder = new GenericRecordBuilder(AvroIO.parseAvroSchema(inputSchemaStr))
+
+    recordBuilder.set("evtt", "lobby")
+    recordBuilder.set("tss", 1460057037)
+    recordBuilder.set("tsc", 1459972535)
+    recordBuilder.set("tzo", 0)
+    recordBuilder.set("bfg", null)
+    recordBuilder.set("rid", "raveID::2e5084813b06452198a2700b8d1e5c9f")
+    recordBuilder.set("chid", 49358176)
+    recordBuilder.set("plt", "iOS")
+    recordBuilder.set("ver", "9.2.2")
+    recordBuilder.set("ip", "207.228.78.175")
+    recordBuilder.set("bld", null)
+    recordBuilder.set("snid", "2229571687")
+    recordBuilder.set("psnid", null)
+    recordBuilder.set("snn", 0)
+    recordBuilder.set("data", "{\"value\":\"slots\",\"ts_client_device\":\"1459521025\",\"event_name\":\"return_to_lobby\"}")
+    recordBuilder.set("env", "prod")
+    recordBuilder.set("game", "test.int10")
+
+    val record = recordBuilder.build
+    val avroRdd = sc.parallelize(Seq((new AvroKey[GenericRecord](record), NullWritable.get)))
+
+    AvroIO.transformAvroHadoopOutputStream(avroRdd, CustomEventParser.outputSchemaStr, "src/test/resources/", CustomEventParser.transformLobbyEvent)
+
+    //    //Read the data written and verify 
+    val rdd = sc.hadoopFile(
+      "src/test/resources/" + currentDate,
+      classOf[org.apache.avro.mapred.AvroInputFormat[GenericRecord]],
+      classOf[org.apache.avro.mapred.AvroWrapper[GenericRecord]],
+      classOf[org.apache.hadoop.io.NullWritable])
+
+    val actual = rdd.first()
+    assert(actual._1.datum().get("evtt").toString() == "lobby")
+    assert(actual._1.datum().get("tss").toString() == "1460057037")
+    assert(actual._1.datum().get("tsc").toString() == "1459972535")
+    assert(actual._1.datum().get("tzo").toString() == "0")
+    assert(actual._1.datum().get("bfg") == null)
+    assert(actual._1.datum().get("rid").toString() == "raveID::2e5084813b06452198a2700b8d1e5c9f")
+    assert(actual._1.datum().get("chid").toString() == "49358176")
+    assert(actual._1.datum().get("plt").toString() == "iOS")
+    assert(actual._1.datum().get("ver").toString() == "9.2.2")
+    assert(actual._1.datum().get("ip").toString() == "207.228.78.175")
+    assert(actual._1.datum().get("bld") == null)
+    assert(actual._1.datum().get("snid").toString() == "2229571687")
+    assert(actual._1.datum().get("psnid") == null)
+    assert(actual._1.datum().get("snn").toString() == "0")
+    assert(actual._1.datum().get("value").toString() == "slots")
+    assert(actual._1.datum().get("ts_client_device").toString() == "1459521025")
+   }
 }

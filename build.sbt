@@ -54,15 +54,17 @@ libraryDependencies +=
 	"com.fasterxml.jackson.module" % "jackson-module-scala_2.10" % "2.7.2"
 
 
-	
-
 libraryDependencies +=
 "com.bigfishgames.biginsights.gtflume" % "gt-flume" % "1.0.0-SNAPSHOT" excludeAll(
 			ExclusionRule(organization = "javax.servlet"),
 			ExclusionRule(organization = "javax.servlet.jsp"),
 			ExclusionRule(organization = "org.eclipse.jetty.orbit"),
 			ExclusionRule(organization = "org.mortbay.jetty"),
-			ExclusionRule(organization = "com.fasterxml.jackson.core")
+			ExclusionRule(organization = "com.fasterxml.jackson.core"),
+			ExclusionRule(organization = "junit"),
+			ExclusionRule(organization = "commons-beanutils"),
+			ExclusionRule(organization = "commons-collections"),
+			ExclusionRule(organization = "org.apache.hadoop")
 )
 	
 
