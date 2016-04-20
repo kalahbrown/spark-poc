@@ -10,6 +10,7 @@ import org.apache.avro.mapreduce.AvroKeyInputFormat
 import org.apache.avro.mapreduce.AvroKeyOutputFormat
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.io.NullWritable
+import org.apache.hadoop.fs.Path
 import org.apache.hadoop.mapreduce.Job
 import org.apache.log4j.Logger
 import org.apache.spark.SparkConf
@@ -32,7 +33,6 @@ import org.apache.spark.SparkContext._
 //  the next area to explore is write Object, can this be done to just serialize an RDD.
 //TODO: Add the ability to read schema from HDFS
 
-
 //TODO : MUST NOT use Java's Date or Calendar, instead use Joda-Time or JSR-310 https://github.com/alexandru/scala-best-practices/blob/master/sections/2-language-rules.md
 object AvroIO {
 
@@ -44,8 +44,11 @@ object AvroIO {
     parse.parse(schemaStr)
   }
 
+
   def readAvroStream(ssc: StreamingContext, inputDirectory: String, stagingDir: String = "") = {
-    ssc.fileStream[AvroKey[GenericRecord], NullWritable, AvroKeyInputFormat[GenericRecord]](inputDirectory + currentDate + stagingDir)
+    ssc.fileStream[AvroKey[GenericRecord], NullWritable, AvroKeyInputFormat[GenericRecord]](inputDirectory + currentDate + stagingDir
+                                                                                            ,(path : Path) => { !(path.getName().startsWith("_") || path.getName().startsWith("."))}
+                                                                                            ,true)
   }
 
   def dedupAvroHadoopOutputstream(avroRdd: RDD[(AvroKey[GenericRecord], NullWritable)], schemaStr: String, outputDirectory: String) = {

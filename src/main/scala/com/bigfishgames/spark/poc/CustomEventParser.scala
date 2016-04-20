@@ -3,6 +3,7 @@ package com.bigfishgames.spark.poc
 import org.apache.avro.generic.GenericRecord
 import org.apache.avro.mapred.AvroKey
 import org.apache.hadoop.io.NullWritable
+import org.apache.hadoop.fs.Path
 import org.apache.avro.generic.GenericRecordBuilder
 import org.apache.log4j.Logger
 import org.apache.spark.SparkConf
@@ -126,14 +127,15 @@ object CustomEventParser {
     }
     st
   }
+  
 
   def main(args: Array[String]) {
     val ssc = createStreamingContext
 
     val inputDirectory = "hdfs://bi-mgmt02.dev.bigfishgames.com:8020/bfg/flume-gt-events/gt-writer01.int.bigfishgames.com/valid/prod/test.int10/"
-    val avroStream = AvroIO.readAvroStream(ssc, inputDirectory)
+    val avroStream = AvroIO.readAvroStream(ssc, inputDirectory, "")
 
-    val outputDirectory = "hdfs://bi-mgmt02.dev.bigfishgames.com:8020/custom_event/test.int10"
+    val outputDirectory = "hdfs://bi-mgmt02.dev.bigfishgames.com:8020/custom_event/test.int10/"
     avroStream.foreachRDD(rdd => {
       if (!rdd.partitions.isEmpty) {
         logger.info("Writing custom event RDD { " + rdd.toString() + " }")

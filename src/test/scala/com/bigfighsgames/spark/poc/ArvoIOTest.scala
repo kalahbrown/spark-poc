@@ -186,7 +186,7 @@ class ArvoIOTest extends FunSuite with Serializable with BeforeAndAfter {
     val record2 = recordBuilder.build
 
     //this create two tuples (aka records) with the same data
-    val avroRdd = sc.parallelize(Seq((new AvroKey[GenericRecord](record1), NullWritable.get), (new AvroKey[GenericRecord](record1), NullWritable.get)))
+    val avroRdd = sc.parallelize(Seq((new AvroKey[GenericRecord](record1), NullWritable.get), (new AvroKey[GenericRecord](record2), NullWritable.get)))
 
     //This function should de-dup the two records and only return one record
     AvroIO.dedupAvroHadoopOutputstream(avroRdd, schemaStr, "src/test/resources/")
