@@ -52,14 +52,16 @@ object AvroIO {
   }
 
   def dedupAvroHadoopOutputstream(avroRdd: RDD[(AvroKey[GenericRecord], NullWritable)], schemaStr: String, outputDirectory: String) = {
-    logger.info("WRITING DE-DUPPED DATA TO " + outputDirectory + currentDate)
-    avroRdd.reduceByKey((key, value) => key)
-      .saveAsNewAPIHadoopFile(outputDirectory + currentDate, classOf[AvroKey[GenericRecord]], classOf[NullWritable], classOf[AvroKeyOutputFormat[GenericRecord]],
+    logger.info("WRITING DE-DUPPED DATA TO " + outputDirectory + currentDate + " " + avroRdd.first() + " " + avroRdd.count() )
+    val tmp = avroRdd.reduceByKey((key, value) => key)
+    logger.info("Did it de-dup?? " +  avroRdd.first() + " " + avroRdd.count())
+      tmp.saveAsNewAPIHadoopFile(outputDirectory + currentDate, classOf[AvroKey[GenericRecord]], classOf[NullWritable], classOf[AvroKeyOutputFormat[GenericRecord]],
         createAvroJob(schemaStr).getConfiguration)
   }
 
   /*
    * read in one avro schema and write to another "tranformed" avro schema
+   * TODO: look at transform function on DStream instead of looping through the RDDs in the DStream manually
    */
   def transformAvroHadoopOutputStream(avroRdd: RDD[(AvroKey[GenericRecord], NullWritable)], schemaStr: String, outputDirectory: String, transform: ((AvroKey[GenericRecord], NullWritable)) => (AvroKey[GenericRecord], NullWritable)) = {
     logger.info("WRITING AVRO TRANSFORMED DATA TO " + outputDirectory + currentDate)

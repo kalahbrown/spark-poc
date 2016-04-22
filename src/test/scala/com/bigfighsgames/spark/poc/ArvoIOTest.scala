@@ -181,12 +181,23 @@ class ArvoIOTest extends FunSuite with Serializable with BeforeAndAfter {
     recordBuilder.set("test1", "test")
     recordBuilder.set("test2", 1234566L)
     recordBuilder.set("test3", 1)
+    
+    val recordBuilder2 = new GenericRecordBuilder(AvroIO.parseAvroSchema(schemaStr))
+    recordBuilder2.set("test1", "test")
+    recordBuilder2.set("test2", 1234566L)
+    recordBuilder2.set("test3", 0)
+    
+    val recordBuilder3 = new GenericRecordBuilder(AvroIO.parseAvroSchema(schemaStr))
+    recordBuilder3.set("test1", "test")
+    recordBuilder3.set("test2", 1234566L)
+    recordBuilder3.set("test3", 0)
 
     val record1 = recordBuilder.build
-    val record2 = recordBuilder.build
+    val record2 = recordBuilder2.build
+    val record3 = recordBuilder3.build
 
     //this create two tuples (aka records) with the same data
-    val avroRdd = sc.parallelize(Seq((new AvroKey[GenericRecord](record1), NullWritable.get), (new AvroKey[GenericRecord](record2), NullWritable.get)))
+    val avroRdd = sc.parallelize(Seq((new AvroKey[GenericRecord](record1), NullWritable.get), (new AvroKey[GenericRecord](record2), NullWritable.get), (new AvroKey[GenericRecord](record3), NullWritable.get)))
 
     //This function should de-dup the two records and only return one record
     AvroIO.dedupAvroHadoopOutputstream(avroRdd, schemaStr, "src/test/resources/")
@@ -198,11 +209,7 @@ class ArvoIOTest extends FunSuite with Serializable with BeforeAndAfter {
       classOf[org.apache.avro.mapred.AvroWrapper[GenericRecord]],
       classOf[org.apache.hadoop.io.NullWritable])
 
-    assert(rdd.count() == 1)
-    val actual = rdd.first()
-    assert(actual._1.datum().get("test1").toString() == "test")
-    assert(actual._1.datum().get("test2").toString() == "1234566")
-    assert(actual._1.datum().get("test3").toString() == "1")
+    assert(rdd.count() == 2)
   }
 
   test("transform avro") {
@@ -355,4 +362,6 @@ class ArvoIOTest extends FunSuite with Serializable with BeforeAndAfter {
     assert(actual._1.datum().get("value").toString() == "slots")
     assert(actual._1.datum().get("ts_client_device").toString() == "1459521025")
    }
+  
+
 }

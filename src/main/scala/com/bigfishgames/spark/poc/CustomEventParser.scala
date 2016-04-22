@@ -45,9 +45,9 @@ object CustomEventParser {
       .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
       .set("spark.kryoserializer.buffer", "24")
       .set("HADOOP_HOME", System.getenv().get("HADOOP_HOME"))
-      .setAppName("read avro")
+      .setAppName("custom event parser")
 
-    new StreamingContext(conf, Seconds(10))
+    new StreamingContext(conf, Seconds(30))
   }
 
   def transformLobbyEvent(row: (AvroKey[GenericRecord], NullWritable)): (AvroKey[GenericRecord], NullWritable) = {
