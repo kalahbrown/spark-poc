@@ -124,17 +124,20 @@ class ArvoIOTest extends FunSuite with Serializable with BeforeAndAfter {
 
   //Create Spark Configuration and Context
   var sc: SparkContext = _
+  
   before {
 
     val path = Path.fromString("src/test/resources/" + currentDate)
     path.deleteRecursively(continueOnFailure = true)
 
+    //sudo -u bfgjava spark-submit --class  com.bigfishgames.spark.poc.AvroDeDup --master yarn-client /home/data/spark-test-dedup/spark-scala-lib-assembly-0.0.1.jar
     val conf = new SparkConf()
       .setMaster("local[3]")
+      //need for avro serialization
       .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
       .set("spark.kryoserializer.buffer", "24")
       .set("HADOOP_HOME", System.getenv().get("HADOOP_HOME"))
-      .setAppName("read avro")
+      .setAppName("test avro IO")
 
     sc = new SparkContext(conf)
   }
@@ -147,6 +150,10 @@ class ArvoIOTest extends FunSuite with Serializable with BeforeAndAfter {
     System.clearProperty("spark.driver.port")
   }
 
+  /*
+   * this test writing Avro data using the dedupAvroHadoopOutputstream
+   * key - value (AvroKey, NullWritable)
+   */
   test("write Avro formatted data") {
     //Create test Avro data and RDD
     val recordBuilder = new GenericRecordBuilder(AvroIO.parseAvroSchema(schemaStr))
